@@ -22,9 +22,9 @@ func cleanInput(text string) []string {
 	return cleanedInput
 }
 
-func writeStrings(w io.Writer, entries []string) error {
+func writeStrings(w io.Writer, entries ...string) error {
 	for _, entry := range entries {
-		_, err := fmt.Fprintf(w, entry)
+		_, err := fmt.Fprintf(w, "%s\n", entry)
 		if err != nil {
 			return err
 		}

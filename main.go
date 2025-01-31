@@ -10,8 +10,6 @@ import (
 	"github.com/bogdan-cu/pokedexcli/internal/pokeapi"
 )
 
-const locationAreaUrl = "https://pokeapi.co/api/v2/location-area/"
-
 func main() {
 	app := App{
 		config: &pokeapi.Config{PrevUrl: "", NextUrl: locationAreaUrl},
@@ -25,17 +23,19 @@ func main() {
 		scanner.Scan()
 		input := scanner.Text()
 		cleanedInput := cleanInput(input)
-		command := ""
+		var command string
+		var args []string
 		for key := range commands {
 			if key == cleanedInput[0] {
 				command = key
+				args = cleanedInput[1:]
 			}
 		}
 		if command == "" {
 			fmt.Println("Unknown command")
 		}
 
-		if err := commands[command].callback(&app); err != nil {
+		if err := commands[command].callback(&app, args...); err != nil {
 			fmt.Printf("command execution failed: %s\n", err)
 		}
 	}
