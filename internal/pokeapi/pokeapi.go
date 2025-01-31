@@ -61,17 +61,9 @@ func GetLocationArea(config *Config, forward bool) ([]string, error) {
 		config.PrevUrl = *locations.Next
 	}
 
-	areas := []string{}
+	var areas []string
 	for _, area := range locations.Results {
 		areas = append(areas, area.Name)
 	}
 	return areas, nil
 }
-
-/*
-state 1 - prev empty, next value (0-20)
-forward - using next
-state 2 - prev value(0-20), next value(20-40)
-back - using prev
-state 3 - prev empty, next value(0-20)
-*/

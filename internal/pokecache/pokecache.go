@@ -15,11 +15,11 @@ type cacheEntry struct {
 	val       []byte
 }
 
-func NewCache(interval time.Duration) Cache {
+func NewCache(interval time.Duration) *Cache {
 	entries := make(map[string]cacheEntry)
-	cache := Cache{entries: entries}
-	cache.ReapLoop(interval)
-	return cache
+	cache := Cache{entries: entries, mu: &sync.RWMutex{}}
+	go cache.ReapLoop(interval)
+	return &cache
 }
 
 func (c *Cache) Add(key string, value []byte) {
@@ -37,16 +37,20 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 }
 
 func (c *Cache) ReapLoop(interval time.Duration) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	timer := time.NewTicker(interval)
 	defer timer.Stop()
 	for {
 		t := <-timer.C
+		c.mu.RLock()
 		for key, entry := range c.entries {
 			if t.Add(-interval).After(entry.createdAt) {
+				c.mu.RUnlock()
+				c.mu.Lock()
 				delete(c.entries, key)
+				c.mu.Unlock()
+				c.mu.RLock()
 			}
 		}
+		c.mu.RUnlock()
 	}
 }

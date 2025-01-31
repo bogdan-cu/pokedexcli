@@ -2,49 +2,53 @@ package main
 
 import (
 	"fmt"
+	"github.com/bogdan-cu/pokedexcli/internal/pokecache"
 	"os"
 
 	"github.com/bogdan-cu/pokedexcli/internal/pokeapi"
 )
 
-const locationAreaUrl = "https://pokeapi.co/api/v2/location-area/"
+type App struct {
+	config *pokeapi.Config
+	cache  *pokecache.Cache
+}
 
 type CliCommand struct {
 	name        string
 	description string
-	callback    func(*pokeapi.Config) error
+	callback    func(*App) error
 }
 
 var commands = map[string]CliCommand{
 	"exit": {
 		name:        "exit",
 		description: "Exit the CLI",
-		callback:    commandExit,
+		callback:    (*App).commandExit,
 	},
 	"help": {
 		name:        "help",
 		description: "Displays a help message",
-		callback:    commandHelp,
+		callback:    (*App).commandHelp,
 	},
 	"map": {
 		name:        "map",
 		description: "It displays the names of 20 location areas in the Pokemon world",
-		callback:    commandMap,
+		callback:    (*App).commandMap,
 	},
 	"mapb": {
 		name:        "mapb",
 		description: "It displays the names of the previous 20 location areas in the Pokemon world",
-		callback:    commandMapb,
+		callback:    (*App).commandMapb,
 	},
 }
 
-func commandExit(config *pokeapi.Config) error {
+func (a *App) commandExit() error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(config *pokeapi.Config) error {
+func (a *App) commandHelp() error {
 	fmt.Println(`
 Welcome to the Pokedex!
 Usage:
@@ -56,24 +60,48 @@ mapb: It displays the names of the previous 20 location areas in the Pokemon wor
 	return nil
 }
 
-func commandMap(config *pokeapi.Config) error {
-	results, err := pokeapi.GetLocationArea(config, true)
+func (a *App) commandMap() error {
+	url := a.config.NextUrl
+	if cacheEntry, ok := a.cache.Get(url); ok {
+		results := byteSliceToStringSlice(cacheEntry)
+		err := writeStrings(os.Stdout, results)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	results, err := pokeapi.GetLocationArea(a.config, true)
 	if err != nil {
 		return err
 	}
-	for _, result := range results {
-		fmt.Println(result)
+	err = writeStrings(os.Stdout, results)
+	if err != nil {
+		return err
 	}
+	cacheEntry := stringSliceToByteSlice(results)
+	a.cache.Add(url, cacheEntry)
 	return nil
 }
 
-func commandMapb(config *pokeapi.Config) error {
-	results, err := pokeapi.GetLocationArea(config, false)
+func (a *App) commandMapb() error {
+	url := a.config.PrevUrl
+	if cacheEntry, ok := a.cache.Get(url); ok {
+		results := byteSliceToStringSlice(cacheEntry)
+		err := writeStrings(os.Stdout, results)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	results, err := pokeapi.GetLocationArea(a.config, false)
 	if err != nil {
 		return err
 	}
-	for _, result := range results {
-		fmt.Println(result)
+	err = writeStrings(os.Stdout, results)
+	if err != nil {
+		return err
 	}
+	cacheEntry := stringSliceToByteSlice(results)
+	a.cache.Add(url, cacheEntry)
 	return nil
 }
