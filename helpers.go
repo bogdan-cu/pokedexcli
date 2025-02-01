@@ -24,7 +24,7 @@ func cleanInput(text string) []string {
 
 func writeStrings(w io.Writer, entries ...string) error {
 	for _, entry := range entries {
-		_, err := fmt.Fprintf(w, "%s\n", entry)
+		_, err := fmt.Fprintf(w, "\t- %s\n", entry)
 		if err != nil {
 			return err
 		}

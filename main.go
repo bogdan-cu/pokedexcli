@@ -29,7 +29,9 @@ func main() {
 		for key := range commands {
 			if key == cleanedInput[0] {
 				command = key
-				arg = cleanedInput[1]
+				if len(cleanedInput) > 1 {
+					arg = cleanedInput[1]
+				}
 			}
 		}
 		if command == "" {

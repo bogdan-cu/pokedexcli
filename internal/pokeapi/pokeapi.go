@@ -343,13 +343,9 @@ type Pokestats struct {
 	Name   string
 	Height int
 	Weight int
-	Stats  struct {
-		hp             int
-		attack         int
-		defense        int
-		specialAttack  int
-		specialDefense int
-		speed          int
+	Stats  []struct {
+		Name string
+		Val  int
 	}
 	Types []string
 }
@@ -458,4 +454,39 @@ func (p Pokedex) Has(pokemonName string) (Pokemon, bool) {
 		return pokemon, true
 	}
 	return Pokemon{}, false
+}
+
+func (p Pokedex) GetAll() []string {
+	var names []string
+	for n := range p {
+		names = append(names, n)
+	}
+	return names
+}
+
+func GetStats(pokemon Pokemon) Pokestats {
+	var types []string
+	for _, typeEntry := range pokemon.Types {
+		types = append(types, typeEntry.Type.Name)
+	}
+	var stats []struct {
+		Name string
+		Val  int
+	}
+	for _, statEntry := range pokemon.Stats {
+		name := statEntry.Stat.Name
+		val := statEntry.BaseStat
+		stats = append(stats, struct {
+			Name string
+			Val  int
+		}{Name: name, Val: val})
+	}
+
+	return Pokestats{
+		Name:   pokemon.Name,
+		Height: pokemon.Height,
+		Weight: pokemon.Weight,
+		Stats:  stats,
+		Types:  types,
+	}
 }

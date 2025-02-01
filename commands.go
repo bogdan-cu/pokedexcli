@@ -47,17 +47,22 @@ var commands = map[string]CliCommand{
 	"explore": {
 		name:        "explore",
 		description: "It returns a list of pokemon found in a given location",
-		callback:    (*App).explore,
+		callback:    (*App).commandExplore,
 	},
 	"catch": {
 		name:        "catch",
 		description: "Attempt to catch a specific pokemon",
-		callback:    (*App).catch,
+		callback:    (*App).commandCatch,
 	},
 	"inspect": {
 		name:        "inspect",
 		description: "Returns a basic stat sheet for a Pokemon you have in your Pokedex",
-		callback:    (*App).inspect,
+		callback:    (*App).commandInspect,
+	},
+	"pokedex": {
+		name:        "pokedex",
+		description: "Returns a list of Pokemon you've caught",
+		callback:    (*App).commandPokedex,
 	},
 }
 
@@ -77,7 +82,9 @@ exit: Exit the Pokedex
 map: It displays the names of 20 location areas in the Pokemon world
 mapb: It displays the names of the previous 20 location areas in the Pokemon world
 explore <map_area>: It returns a list of pokemon found in a given location
-catch <pokemon_name>: Attempts to catch a pokemon and add it to the Pokedex`)
+catch <pokemon_name>: Attempts to catch a pokemon and add it to the Pokedex
+inspect <pokemon_name>: Returns a stat sheet for the Pokemon
+pokedex: Returns a list of Pokemon you've caught`)
 	return nil
 }
 
@@ -115,7 +122,7 @@ func (a *App) commandMapb(_ string) error {
 	return nil
 }
 
-func (a *App) explore(location string) error {
+func (a *App) commandExplore(location string) error {
 	locationUrl := locationAreaUrl + location
 	if results, ok := a.cache.Get(locationUrl); ok {
 		pokemon := byteSliceToStringSlice(results)
@@ -132,7 +139,7 @@ func (a *App) explore(location string) error {
 	return nil
 }
 
-func (a *App) catch(name string) error {
+func (a *App) commandCatch(name string) error {
 	if _, ok := a.pokedex.Has(name); ok {
 		return fmt.Errorf("you already have this one in your pokedex")
 	}
@@ -151,11 +158,30 @@ func (a *App) catch(name string) error {
 	return nil
 }
 
-func (a *App) inspect(name string) error {
-	stats, ok := a.pokedex.Has(name)
+func (a *App) commandInspect(name string) error {
+	pokemon, ok := a.pokedex.Has(name)
 	if !ok {
 		return fmt.Errorf("you have not caught this Pokemon")
 	}
-	fmt.Println(stats)
+	stats := pokeapi.GetStats(pokemon)
+	fmt.Printf("Name: %s\n", stats.Name)
+	fmt.Printf("Height: %d\n", stats.Height)
+	fmt.Printf("Weight: %d\n", stats.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range stats.Stats {
+		fmt.Printf("\t-%s: %d\n", stat.Name, stat.Val)
+	}
+	fmt.Println("Types:")
+	if err := writeStrings(os.Stdout, stats.Types...); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) commandPokedex(_ string) error {
+	fmt.Println("Your Pokedex:")
+	if err := writeStrings(os.Stdout, a.pokedex.GetAll()...); err != nil {
+		return err
+	}
 	return nil
 }
