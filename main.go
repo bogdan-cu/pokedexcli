@@ -12,8 +12,9 @@ import (
 
 func main() {
 	app := App{
-		config: &pokeapi.Config{PrevUrl: "", NextUrl: locationAreaUrl},
-		cache:  pokecache.NewCache(5 * time.Second),
+		pokedex: &pokeapi.Pokedex{},
+		config:  &pokeapi.Config{PrevUrl: "", NextUrl: locationAreaUrl},
+		cache:   pokecache.NewCache(5 * time.Second),
 	}
 	reader := bufio.NewReader(os.Stdin)
 	scanner := bufio.NewScanner(reader)
@@ -24,18 +25,18 @@ func main() {
 		input := scanner.Text()
 		cleanedInput := cleanInput(input)
 		var command string
-		var args []string
+		var arg string
 		for key := range commands {
 			if key == cleanedInput[0] {
 				command = key
-				args = cleanedInput[1:]
+				arg = cleanedInput[1]
 			}
 		}
 		if command == "" {
 			fmt.Println("Unknown command")
 		}
 
-		if err := commands[command].callback(&app, args...); err != nil {
+		if err := commands[command].callback(&app, arg); err != nil {
 			fmt.Printf("command execution failed: %s\n", err)
 		}
 	}
